@@ -1,5 +1,8 @@
+from src.ingestion.specified_tickers.nvda_ingestor import NvdaIngestor
+
+
 def main():
-    print("Hello from quant-predictive-analysis!")
+    print(NvdaIngestor().ingest_stock_data("2025-11-20", "2025-12-21"))
 
 
 if __name__ == "__main__":
