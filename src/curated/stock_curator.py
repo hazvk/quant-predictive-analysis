@@ -25,47 +25,19 @@ class StockCurator():
     def curate_stock_data(self):
         self._logger.info(f"Starting curation for ticker: {self.ticker}")
 
-        self._logger.info("Processing data only for latest load of data")        
-        load_df_with_ta = self._get_latest_load_df()
+        load_df = self._get_latest_load_df()
 
-        if len(load_df_with_ta) == 0:
+        if len(load_df) == 0:
             self._logger.warning(f"No data found for ticker: {self.ticker} to curate.")
             return False
 
-        load_df_with_ta["RSI"] = pa.rsi(load_df_with_ta.close, length=16)
-        load_df_with_ta["CCI"] = pa.cci(load_df_with_ta.high, load_df_with_ta.low, load_df_with_ta.close, length=16)
-        load_df_with_ta["AO"] = pa.ao(load_df_with_ta.high, load_df_with_ta.low)
-        load_df_with_ta["MOM"] = pa.mom(load_df_with_ta.close, length=16)
-        a = pa.macd(load_df_with_ta.close)
-        load_df_with_ta = load_df_with_ta.join(a)
-        load_df_with_ta["ATR"] = pa.atr(load_df_with_ta.high, load_df_with_ta.low, load_df_with_ta.close, length=16)
-        load_df_with_ta["BOP"] = pa.bop(load_df_with_ta.open, load_df_with_ta.high, load_df_with_ta.low, load_df_with_ta.close, length=16)
-        load_df_with_ta["RVI"] = pa.rvi(load_df_with_ta.close)
-        a = pa.dm(load_df_with_ta.high, load_df_with_ta.low, length=16)
-        load_df_with_ta = load_df_with_ta.join(a)
-        a = pa.stoch(load_df_with_ta.high, load_df_with_ta.low, load_df_with_ta.close)
-        load_df_with_ta = load_df_with_ta.join(a)
-        a = pa.stochrsi(load_df_with_ta.close, length=16)
-        load_df_with_ta = load_df_with_ta.join(a)
-        load_df_with_ta["WPR"] = pa.willr(load_df_with_ta.high, load_df_with_ta.low, load_df_with_ta.close, length=16)
+        df_with_ta["load_time"] = pd.Timestamp.now(tz="UTC")
 
-        load_df_with_ta["load_time"] = pd.Timestamp.now(tz="UTC")
+        df_with_ta = StockCurator._stock_data_with_ta(load_df, lookback_length=16)
 
-        with self._get_stock_db_data_conn() as conn:
-            conn.execute(f"""
-                BEGIN TRANSACTION;
-                
-                MERGE INTO {STOCKS_CURATED_TABLE_NAME}
-                    USING load_df_with_ta
-                    ON {STOCKS_CURATED_TABLE_NAME}.ticker = load_df_with_ta.ticker
-                        AND {STOCKS_CURATED_TABLE_NAME}.date = load_df_with_ta.date
-                    WHEN MATCHED THEN UPDATE
-                    WHEN NOT MATCHED THEN INSERT;
-
-                UPDATE {STOCKS_RAW_TABLE_NAME} SET is_latest_load = FALSE WHERE ticker = '{self.ticker}';
-
-                COMMIT;
-                """)
+        self._save_curated_df(df_with_ta)
+            
+        self._logger.info(f"- Done")
         return True
     
     ### PRIVATE METHODS ###
@@ -74,6 +46,8 @@ class StockCurator():
         return StockDuckDbConn().get_current_conn()
     
     def _get_latest_load_df(self) -> pd.DataFrame:
+        self._logger.info("Processing data only for latest load of data")        
+
         with self._get_stock_db_data_conn() as conn:
             return conn.sql(f"""
                 SELECT 
@@ -89,3 +63,57 @@ class StockCurator():
                     AND is_latest_load = TRUE
                 ORDER BY raw.date ASC
                 """).to_df()
+        
+    def _save_curated_df(self, load_df_with_ta: pd.DataFrame):
+        with self._get_stock_db_data_conn() as conn:
+            conn.execute(f"""
+                BEGIN TRANSACTION;
+                
+                MERGE INTO {STOCKS_CURATED_TABLE_NAME}
+                    USING load_df_with_ta
+                    ON {STOCKS_CURATED_TABLE_NAME}.ticker = load_df_with_ta.ticker
+                        AND {STOCKS_CURATED_TABLE_NAME}.date = load_df_with_ta.date
+                    WHEN MATCHED THEN UPDATE
+                    WHEN NOT MATCHED THEN INSERT;
+
+                UPDATE {STOCKS_RAW_TABLE_NAME} SET is_latest_load = FALSE WHERE ticker = '{self.ticker}';
+
+                COMMIT;
+                """)
+        
+    ### STATIC METHODS ###
+
+    @staticmethod
+    def _stock_data_with_ta(load_df: pd.DataFrame, lookback_length: int) -> pd.DataFrame:
+
+        load_df_with_ta = load_df.copy()
+
+        load_df_with_ta["RSI"] = pa.rsi(load_df_with_ta['close'], length=lookback_length)
+
+        load_df_with_ta["CCI"] = pa.cci(load_df_with_ta['high'], load_df_with_ta['low'], load_df_with_ta['close'], length=lookback_length)
+        
+        load_df_with_ta["AO"] = pa.ao(load_df_with_ta['high'], load_df_with_ta['low'])
+        
+        load_df_with_ta["MOM"] = pa.mom(load_df_with_ta['close'], length=lookback_length)
+        
+        a = pa.macd(load_df_with_ta['close'])
+        load_df_with_ta = load_df_with_ta.join(a)
+        
+        load_df_with_ta["ATR"] = pa.atr(load_df_with_ta['high'], load_df_with_ta['low'], load_df_with_ta['close'], length=lookback_length)
+        
+        load_df_with_ta["BOP"] = pa.bop(load_df_with_ta['open'], load_df_with_ta['high'], load_df_with_ta['low'], load_df_with_ta['close'], length=lookback_length)
+        
+        load_df_with_ta["RVI"] = pa.rvi(load_df_with_ta['close'])
+        
+        a = pa.dm(load_df_with_ta['high'], load_df_with_ta['low'], length=lookback_length)
+        load_df_with_ta = load_df_with_ta.join(a)
+        
+        a = pa.stoch(load_df_with_ta['high'], load_df_with_ta['low'], load_df_with_ta['close'])
+        load_df_with_ta = load_df_with_ta.join(a)
+        
+        a = pa.stochrsi(load_df_with_ta['close'], length=lookback_length)
+        load_df_with_ta = load_df_with_ta.join(a)
+        
+        load_df_with_ta["WPR"] = pa.willr(load_df_with_ta['high'], load_df_with_ta['low'], load_df_with_ta['close'], length=lookback_length)
+
+        return load_df_with_ta
