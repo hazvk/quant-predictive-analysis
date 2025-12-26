@@ -31,10 +31,16 @@ class StockCurator():
             self._logger.warning(f"No data found for ticker: {self.ticker} to curate.")
             return False
 
-        df_with_ta["load_time"] = pd.Timestamp.now(tz="UTC")
 
         df_with_ta = StockCurator._stock_data_with_ta(load_df, lookback_length=16)
-
+        
+        df_with_ta["load_time"] = pd.Timestamp.now(tz="UTC")
+        
+        num_na_rows = df_with_ta.isna().sum()
+        self._logger.info(f"Number of NA rows before dropping: {num_na_rows.to_dict()} (total rows: {df_with_ta.shape[0]})")
+        df_with_ta.dropna(inplace=True)
+        self._logger.info(f"Number of rows left after dropping: {df_with_ta.shape[0]}")
+        
         self._save_curated_df(df_with_ta)
             
         self._logger.info(f"- Done")
