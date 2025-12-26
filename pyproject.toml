@@ -1,7 +1,7 @@
 [project]
 name = "quant-predictive-analysis"
 version = "0.1.0"
-description = "Add your description here"
+description = "Produce analysis on stocks in a scalable way"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
