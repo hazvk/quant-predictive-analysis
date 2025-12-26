@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 from pathlib import Path
@@ -31,6 +32,17 @@ def _create_table_if_not_exists(duckdb_conn: duckdb.DuckDBPyConnection):
     logging.warning(f"Table {STOCKS_RAW_TABLE_NAME} created in DuckDB")
 
 def initialize():
+    argparser = argparse.ArgumentParser(description="Create the stock database.")
+    argparser.add_argument("-y", action="store_true", help="Initialisation without confirmation")
+
+    if not argparser.parse_args().y:
+        confirmation = input("Are you sure you want to create a new stock database? (yes/no): ")
+        if confirmation.lower() != "yes":
+            print("Initialisation cancelled.")
+            return
+    else:
+        print("Flagged to proceed with initialisation without confirmation.")
+        
     load_dotenv()
     _create_data_directory()
     with StockDuckDbConn().get_current_conn() as conn:
