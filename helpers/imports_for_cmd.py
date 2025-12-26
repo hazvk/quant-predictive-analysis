@@ -4,7 +4,6 @@
 from dotenv import load_dotenv
 
 from src.utils.stock_duck_db_conn import StockDuckDbConn
-from helpers.general_stock_ingestor import GeneralStockIngestor
 
 
 load_dotenv()

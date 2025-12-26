@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import duckdb
 
-from src.utils.constants import STOCKS_RAW_TABLE_NAME
+from src.utils.constants import STOCKS_CURATED_TABLE_NAME, STOCKS_RAW_TABLE_NAME
 from src.utils.stock_duck_db_conn import StockDuckDbConn
 
 def _create_data_directory():
@@ -16,20 +16,56 @@ def _create_data_directory():
     except FileExistsError:
         logging.warning(f"Data directory {ingestion_path} already exists")
 
-def _create_table_if_not_exists(duckdb_conn: duckdb.DuckDBPyConnection):
+def _create_tables(duckdb_conn: duckdb.DuckDBPyConnection):
     duckdb_conn.execute(f"""
         CREATE TABLE {STOCKS_RAW_TABLE_NAME} (
-            Datetime TIMESTAMP,
-            Open DOUBLE,
-            High DOUBLE,
-            Low DOUBLE,
-            Close DOUBLE,
-            Volume BIGINT,
-            Ingestion_Time TIMESTAMP
+            ticker STRING,
+            interval_Type STRING,
+            date TIMESTAMP,
+            open DOUBLE,
+            high DOUBLE,
+            low DOUBLE,
+            close DOUBLE,
+            volume BIGINT,
+            ingestion_time TIMESTAMP,
+            is_latest_load BOOLEAN DEFAULT TRUE
         )
     """)
 
     logging.warning(f"Table {STOCKS_RAW_TABLE_NAME} created in DuckDB")
+
+    duckdb_conn.execute(f"""
+        CREATE TABLE {STOCKS_CURATED_TABLE_NAME} (
+            ticker VARCHAR,
+            date TIMESTAMP,
+            open DOUBLE,
+            high DOUBLE,
+            low DOUBLE,
+            close DOUBLE,
+            volume BIGINT,
+            RSI DOUBLE,
+            CCI DOUBLE,
+            AO DOUBLE,
+            MOM DOUBLE,
+            MACD_12_26_9 DOUBLE,
+            MACDh_12_26_9 DOUBLE,
+            MACDs_12_26_9 DOUBLE,
+            ATR DOUBLE,
+            BOP DOUBLE,
+            RVI DOUBLE,
+            DMP_16 DOUBLE,
+            DMN_16 DOUBLE,
+            STOCHk_14_3_3 DOUBLE,
+            STOCHd_14_3_3 DOUBLE,
+            STOCHh_14_3_3 DOUBLE,
+            STOCHRSIk_16_14_3_3 DOUBLE,
+            STOCHRSId_16_14_3_3 DOUBLE,
+            WPR DOUBLE,
+            load_time TIMESTAMP
+        )
+    """)
+
+    logging.warning(f"Table {STOCKS_CURATED_TABLE_NAME} created in DuckDB")
 
 def initialize():
     argparser = argparse.ArgumentParser(description="Create the stock database.")
@@ -46,7 +82,7 @@ def initialize():
     load_dotenv()
     _create_data_directory()
     with StockDuckDbConn().get_current_conn() as conn:
-        _create_table_if_not_exists(conn)
+        _create_tables(conn)
 
 if __name__ == "__main__":
     initialize()
