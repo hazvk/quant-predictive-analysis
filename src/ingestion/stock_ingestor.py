@@ -30,6 +30,7 @@ class StockIngestor():
         with self._get_stock_db_data_conn() as conn:
             self._insert_stock_data(conn, df)
         
+        self._logger.info(f"- Done")
         return True
     
     ### PRIVATE METHODS ###
