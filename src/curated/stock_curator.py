@@ -1,4 +1,4 @@
-import logging
+from src.utils.logger import Logger
 import pandas as pd
 import duckdb
 import pandas_ta as pa
@@ -9,6 +9,7 @@ from src.utils.stock_duck_db_conn import StockDuckDbConn
 
 class StockCurator():
         
+    _logger = Logger()
     _ticker: str = None
 
     def __init__(self, ticker: str):
@@ -22,27 +23,15 @@ class StockCurator():
         return self._ticker
 
     def curate_stock_data(self):
-        logging.info(f"Starting curation for ticker: {self.ticker}")
-        print(f"Starting curation for ticker: {self.ticker}")
+        self._logger.info(f"Starting curation for ticker: {self.ticker}")
 
-        latest_load_df = None
-        with self._get_stock_db_data_conn() as conn:
-            latest_load_df = conn.sql(f"""
-                SELECT 
-                    raw.ticker
-                    , raw.date
-                    , raw.open
-                    , raw.high
-                    , raw.low
-                    , raw.close
-                    , raw.volume
-                FROM {STOCKS_RAW_TABLE_NAME} AS raw
-                WHERE raw.ticker = '{self.ticker}'
-                    AND is_latest_load = TRUE
-                ORDER BY raw.date ASC
-                """).to_df()
-        
-        load_df_with_ta = latest_load_df
+        self._logger.info("Processing data only for latest load of data")        
+        load_df_with_ta = self._get_latest_load_df()
+
+        if len(load_df_with_ta) == 0:
+            self._logger.warning(f"No data found for ticker: {self.ticker} to curate.")
+            return False
+
         load_df_with_ta["RSI"] = pa.rsi(load_df_with_ta.close, length=16)
         load_df_with_ta["CCI"] = pa.cci(load_df_with_ta.high, load_df_with_ta.low, load_df_with_ta.close, length=16)
         load_df_with_ta["AO"] = pa.ao(load_df_with_ta.high, load_df_with_ta.low)
@@ -83,3 +72,20 @@ class StockCurator():
 
     def _get_stock_db_data_conn(self) -> duckdb.DuckDBPyConnection:
         return StockDuckDbConn().get_current_conn()
+    
+    def _get_latest_load_df(self) -> pd.DataFrame:
+        with self._get_stock_db_data_conn() as conn:
+            return conn.sql(f"""
+                SELECT 
+                    raw.ticker
+                    , raw.date
+                    , raw.open
+                    , raw.high
+                    , raw.low
+                    , raw.close
+                    , raw.volume
+                FROM {STOCKS_RAW_TABLE_NAME} AS raw
+                WHERE raw.ticker = '{self.ticker}'
+                    AND is_latest_load = TRUE
+                ORDER BY raw.date ASC
+                """).to_df()

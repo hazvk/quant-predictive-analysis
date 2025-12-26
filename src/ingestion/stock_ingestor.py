@@ -1,14 +1,15 @@
-import logging
 import pandas as pd
 import yfinance as yf
 import duckdb
 
+from src.utils.logger import Logger
 from src.utils.constants import STOCKS_RAW_TABLE_NAME
 from src.utils.stock_duck_db_conn import StockDuckDbConn
 
 
 class StockIngestor():
         
+    _logger: Logger = Logger()
     _ticker: str = None
 
     def __init__(self, ticker: str):
@@ -22,8 +23,7 @@ class StockIngestor():
         return self._ticker
 
     def ingest_stock_data(self, start_date: str, end_date: str, interval: str = "1d"):
-        logging.info(f"Starting ingestion for ticker: {self.ticker} from {start_date} to {end_date} with interval {interval}")
-        print(f"Starting ingestion for ticker: {self.ticker} from {start_date} to {end_date} with interval {interval}")
+        self._logger.info(f"Starting ingestion for ticker: {self.ticker} from {start_date} to {end_date} with interval {interval}")
         
         df = self._download_stock_data(start_date, end_date, interval)
 
@@ -37,7 +37,7 @@ class StockIngestor():
     def _download_stock_data(self, start_date: str, end_date: str, interval: str):
         df = yf.download(self.ticker, start=start_date, end=end_date, interval=interval)
         
-        # print(df.columns)
+        # self._logger.debug(df.columns)
 
         df.columns = df.columns.get_level_values(0) # keep only "Price" index
         df["Ticker"] = self.ticker
@@ -49,13 +49,13 @@ class StockIngestor():
         # re-order columns for ingestion, doesn't filter out any columns
         df = df[["Ticker", "Interval_Type", "Date", "Open", "High", "Low", "Close", "Volume", "Ingestion_Time"]]
 
-        # print(df.columns)
+        # self._logger.debug(df.columns)
 
         return df
 
     def _insert_stock_data(self, duckdb_conn: duckdb.DuckDBPyConnection, downloaded_stock_data_df: pd.DataFrame):
-        # print(downloaded_stock_data_df)
-        # print(downloaded_stock_data_df.columns)
+        # self._logger.debug(downloaded_stock_data_df)
+        # self._logger.debug(downloaded_stock_data_df.columns)
 
         duckdb_conn.execute(f"""
             INSERT INTO {STOCKS_RAW_TABLE_NAME} (

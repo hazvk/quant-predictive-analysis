@@ -1,20 +1,22 @@
 import argparse
-import logging
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 import duckdb
 
+from src.utils.logger import Logger
 from src.utils.constants import STOCKS_CURATED_TABLE_NAME, STOCKS_RAW_TABLE_NAME
 from src.utils.stock_duck_db_conn import StockDuckDbConn
+
+_logger = Logger()
 
 def _create_data_directory():
     ingestion_path = os.environ["QUANT_PRED_ANALYSIS_DUCKDB_STORAGE_PATH"]
     try:
         Path(ingestion_path).mkdir(parents=True)
-        logging.warning(f"Created data directory {ingestion_path}")
+        _logger.warning(f"Created data directory {ingestion_path}")
     except FileExistsError:
-        logging.warning(f"Data directory {ingestion_path} already exists")
+        _logger.warning(f"Data directory {ingestion_path} already exists")
 
 def _create_tables(duckdb_conn: duckdb.DuckDBPyConnection):
     duckdb_conn.execute(f"""
@@ -32,7 +34,7 @@ def _create_tables(duckdb_conn: duckdb.DuckDBPyConnection):
         )
     """)
 
-    logging.warning(f"Table {STOCKS_RAW_TABLE_NAME} created in DuckDB")
+    _logger.warning(f"Table {STOCKS_RAW_TABLE_NAME} created in DuckDB")
 
     duckdb_conn.execute(f"""
         CREATE TABLE {STOCKS_CURATED_TABLE_NAME} (
@@ -65,7 +67,7 @@ def _create_tables(duckdb_conn: duckdb.DuckDBPyConnection):
         )
     """)
 
-    logging.warning(f"Table {STOCKS_CURATED_TABLE_NAME} created in DuckDB")
+    _logger.warning(f"Table {STOCKS_CURATED_TABLE_NAME} created in DuckDB")
 
 def initialize():
     argparser = argparse.ArgumentParser(description="Create the stock database.")
@@ -74,12 +76,12 @@ def initialize():
     if not argparser.parse_args().y:
         confirmation = input("Are you sure you want to create a new stock database? (yes/no): ")
         if confirmation.lower() != "yes":
-            print("Initialisation cancelled.")
+            _logger.warning("Initialisation cancelled.")
             return
     else:
-        print("Flagged to proceed with initialisation without confirmation.")
+        _logger.info("Flagged to proceed with initialisation without confirmation.")
         
-    load_dotenv()
+    load_dotenv("config/.env")
     _create_data_directory()
     with StockDuckDbConn().get_current_conn() as conn:
         _create_tables(conn)
