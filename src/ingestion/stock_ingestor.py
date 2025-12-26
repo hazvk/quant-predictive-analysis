@@ -4,6 +4,7 @@ import pandas as pd
 import yfinance as yf
 import duckdb
 
+from src.utils.constants import STOCKS_RAW_TABLE_NAME
 from src.utils.stock_duck_db_conn import StockDuckDbConn
 
 
@@ -33,7 +34,7 @@ class StockIngestor(ABC):
         return df
 
     def _insert_stock_data(self, duckdb_conn: duckdb.DuckDBPyConnection, downloaded_stock_data_df: pd.DataFrame):
-        duckdb_conn.execute("INSERT INTO stocks_raw select * from downloaded_stock_data_df")
+        duckdb_conn.execute(f"INSERT INTO {STOCKS_RAW_TABLE_NAME} SELECT * FROM downloaded_stock_data_df")
 
     def _get_stock_db_data_conn(self) -> duckdb.DuckDBPyConnection:
         return StockDuckDbConn().get_current_conn()

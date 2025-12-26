@@ -3,6 +3,8 @@ from pathlib import Path
 
 import duckdb
 
+from src.utils.constants import STOCKS_DUCKDB_FILENAME
+
 
 class StockDuckDbConn():
     
@@ -12,7 +14,7 @@ class StockDuckDbConn():
     def __init__(self):
         ingestion_path = os.environ["QUANT_PRED_ANALYSIS_DUCKDB_DATA_PATH"]
         Path(ingestion_path).mkdir(parents=True, exist_ok=True)
-        self.data_path = Path(ingestion_path) / "stocks.duckdb"
+        self.data_path = Path(ingestion_path) / STOCKS_DUCKDB_FILENAME
 
     def get_current_conn(self) -> duckdb.DuckDBPyConnection:
         self._conn = self._conn or duckdb.connect(self.data_path)
