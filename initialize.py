@@ -9,7 +9,7 @@ from src.utils.constants import STOCKS_CURATED_TABLE_NAME, STOCKS_RAW_TABLE_NAME
 from src.utils.stock_duck_db_conn import StockDuckDbConn
 
 def _create_data_directory():
-    ingestion_path = os.environ["QUANT_PRED_ANALYSIS_DUCKDB_DATA_PATH"]
+    ingestion_path = os.environ["QUANT_PRED_ANALYSIS_DUCKDB_STORAGE_PATH"]
     try:
         Path(ingestion_path).mkdir(parents=True)
         logging.warning(f"Created data directory {ingestion_path}")

@@ -9,7 +9,7 @@ class StockDuckDbConn():
     _conn: duckdb.DuckDBPyConnection = None
 
     def __init__(self):
-        ingestion_path = os.environ["QUANT_PRED_ANALYSIS_DUCKDB_DATA_PATH"]
+        ingestion_path = os.environ["QUANT_PRED_ANALYSIS_DUCKDB_STORAGE_PATH"]
         self.data_path = Path(ingestion_path) / os.environ["STOCKS_DUCKDB_FILENAME"]
 
     def get_current_conn(self) -> duckdb.DuckDBPyConnection:

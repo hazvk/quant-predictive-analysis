@@ -17,7 +17,7 @@ def teardown():
     else:
         print("Flagged to proceed with teardown without confirmation.")
         
-    load_dotenv()
+    load_dotenv("config/.env")
     if os.path.exists(StockDuckDbConn().data_path):
         os.remove(StockDuckDbConn().data_path)
         logging.warning("Removed stock data directory")

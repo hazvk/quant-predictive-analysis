@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from src.utils.stock_duck_db_conn import StockDuckDbConn
 
 
-load_dotenv()
+load_dotenv("config/.env")
 
 duck_db_conn = StockDuckDbConn().get_current_conn()
 
