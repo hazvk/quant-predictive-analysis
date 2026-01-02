@@ -9,7 +9,7 @@ load_dotenv("config/.env")
 
 def _ingest_data():
     for ticker in STOCKS_TO_CALCULATE:
-        StockIngestor(ticker).ingest_stock_data("2025-09-25", "2025-12-26")
+        StockIngestor(ticker).ingest_stock_data()
 
 def _curate_data():
     for ticker in STOCKS_TO_CALCULATE:

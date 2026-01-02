@@ -38,27 +38,27 @@ class StockIngestor():
     def _download_stock_data(self, interval: str, start_date_override: str, end_date_override: str) -> pd.DataFrame:
         start_date = start_date_override
         end_date = end_date_override or pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d")
-        max_date_found = False
+        is_max_date_found = False
         
         with StockDuckDbConn().get_current_conn() as conn:
-            max_date_found = conn.sql(f"""
-                SELECT MAX(Date) as max_date FROM {STOCKS_CURATED_TABLE_NAME}
+            max_date_found_df = conn.sql(f"""
+                SELECT MAX(Date) as max_date FROM {STOCKS_RAW_TABLE_NAME}
                 WHERE ticker = ?
                 GROUP BY ticker
             """, params=[self.ticker]).to_df()
 
-            if max_date_found.shape[0] > 0:
+            if max_date_found_df.shape[0] > 0:
                 self._logger.info(f"  - Existing data found for ticker {self.ticker}")
-                max_date_found = True
-                max_date = max_date_found["max_date"].iloc[0]
+                is_max_date_found = True
+                max_date = max_date_found_df["max_date"].iloc[0]
                 if start_date is None:
                     start_date = (pd.to_datetime(max_date) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
                     self._logger.info(f"  - Adjusted start_date to {start_date} based on existing data")
             else:
                 self._logger.info(f"  - No existing data found for ticker {self.ticker}")
-                max_date_found = False
+                is_max_date_found = False
             
-        if max_date_found:
+        if is_max_date_found:
             df = yf.download(self.ticker, start=start_date, end=end_date, interval=interval)
             
             # self._logger.debug(df.columns)
