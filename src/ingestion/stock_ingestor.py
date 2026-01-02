@@ -3,7 +3,7 @@ import yfinance as yf
 import duckdb
 
 from src.utils.logger import Logger
-from src.utils.constants import STOCKS_RAW_TABLE_NAME
+from src.utils.constants import STOCKS_CURATED_TABLE_NAME, STOCKS_RAW_TABLE_NAME
 from src.utils.stock_duck_db_conn import StockDuckDbConn
 
 
@@ -22,10 +22,10 @@ class StockIngestor():
     def ticker(self) -> str:
         return self._ticker
 
-    def ingest_stock_data(self, start_date: str, end_date: str, interval: str = "1d"):
-        self._logger.info(f"Starting ingestion for ticker: {self.ticker} from {start_date} to {end_date} with interval {interval}")
+    def ingest_stock_data(self, interval: str = "1d", start_date_override: str = None, end_date_override: str = None):
+        self._logger.info(f"Starting ingestion for ticker: {self.ticker} from {start_date_override} to {end_date_override} with interval {interval}")
         
-        df = self._download_stock_data(start_date, end_date, interval)
+        df = self._download_stock_data(interval, start_date_override, end_date_override)
 
         with self._get_stock_db_data_conn() as conn:
             self._insert_stock_data(conn, df)
@@ -35,21 +35,50 @@ class StockIngestor():
     
     ### PRIVATE METHODS ###
 
-    def _download_stock_data(self, start_date: str, end_date: str, interval: str):
-        df = yf.download(self.ticker, start=start_date, end=end_date, interval=interval)
+    def _download_stock_data(self, interval: str, start_date_override: str, end_date_override: str) -> pd.DataFrame:
+        start_date = start_date_override
+        end_date = end_date_override or pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d")
+        max_date_found = False
         
-        # self._logger.debug(df.columns)
+        with StockDuckDbConn().get_current_conn() as conn:
+            max_date_found = conn.sql(f"""
+                SELECT MAX(Date) as max_date FROM {STOCKS_CURATED_TABLE_NAME}
+                WHERE ticker = ?
+                GROUP BY ticker
+            """, params=[self.ticker]).to_df()
 
-        df.columns = df.columns.get_level_values(0) # keep only "Price" index
-        df["Ticker"] = self.ticker
+            if max_date_found.shape[0] > 0:
+                self._logger.info(f"  - Existing data found for ticker {self.ticker}")
+                max_date_found = True
+                max_date = max_date_found["max_date"].iloc[0]
+                if start_date is None:
+                    start_date = (pd.to_datetime(max_date) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+                    self._logger.info(f"  - Adjusted start_date to {start_date} based on existing data")
+            else:
+                self._logger.info(f"  - No existing data found for ticker {self.ticker}")
+                max_date_found = False
+            
+        if max_date_found:
+            df = yf.download(self.ticker, start=start_date, end=end_date, interval=interval)
+            
+            # self._logger.debug(df.columns)
 
-        df.reset_index(inplace=True)
-        df["Interval_Type"] = interval
+            df.columns = df.columns.get_level_values(0) # keep only "Price" index
+            df["Ticker"] = self.ticker
+
+            df.reset_index(inplace=True)
+            df["Interval_Type"] = interval
+        else:
+            df = yf.Ticker(self.ticker).history(period="max")
+            df.reset_index(inplace=True)
+            df["Ticker"] = self.ticker
+            df["Interval_Type"] = interval
+
         df["Ingestion_Time"] = pd.Timestamp.now(tz="UTC")
 
         # re-order columns for ingestion, doesn't filter out any columns
         df = df[["Ticker", "Interval_Type", "Date", "Open", "High", "Low", "Close", "Volume", "Ingestion_Time"]]
-
+        
         # self._logger.debug(df.columns)
 
         return df
