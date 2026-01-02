@@ -3,7 +3,7 @@
 
 from dotenv import load_dotenv
 
-from src.utils.stock_duck_db_conn import StockDuckDbConn
+from src.utils.common.stock_duck_db_conn import StockDuckDbConn
 
 
 load_dotenv("config/.env")
