@@ -1,9 +1,29 @@
-[
-    "NVDA",
-    "AAPL",
-    "MSFT",
-    "GOOGL",
-    "AMZN",
-    "TSLA",
-    "META"
-]
+{
+    "tech": [
+        "NVDA",
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "AMZN",
+        "TSLA",
+        "META"
+    ],
+    "ASX_blue_chip": [
+        "CBA.AX",
+        "BHP.AX",
+        "CSL.AX",
+        "WBC.AX",
+        "NAB.AX",
+        "ANZ.AX",
+        "MQG.AX"
+    ],
+    "ASX_small_cap": [
+        "A2M.AX",
+        "ALQ.AX",
+        "BKL.AX",
+        "COH.AX",
+        "DDR.AX",
+        "EVN.AX",
+        "GUD.AX"
+    ]
+}

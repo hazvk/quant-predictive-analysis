@@ -3,8 +3,8 @@ import pandas as pd
 import duckdb
 import pandas_ta as pa
 
-from src.utils.constants import STOCKS_CURATED_TABLE_NAME, STOCKS_RAW_TABLE_NAME
-from src.utils.stock_duck_db_conn import StockDuckDbConn
+from src.utils.common.constants import STOCKS_CURATED_TABLE_NAME, STOCKS_RAW_TABLE_NAME
+from src.utils.common.stock_duck_db_conn import StockDuckDbConn
 
 
 class StockCurator():

@@ -8,12 +8,14 @@ from src.utils.config import STOCKS_TO_CALCULATE
 load_dotenv("config/.env")
 
 def _ingest_data():
-    for ticker in STOCKS_TO_CALCULATE:
-        StockIngestor(ticker).ingest_stock_data()
+    for _, tickers in STOCKS_TO_CALCULATE.items():
+        for ticker in tickers:
+            StockIngestor(ticker).ingest_stock_data()
 
 def _curate_data():
-    for ticker in STOCKS_TO_CALCULATE:
-        StockCurator(ticker).curate_stock_data()
+    for _, tickers in STOCKS_TO_CALCULATE.items():
+        for ticker in tickers:
+            StockCurator(ticker).curate_stock_data()
 
 def main():
     _ingest_data()

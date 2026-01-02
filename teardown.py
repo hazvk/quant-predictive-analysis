@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import argparse
 
 from src.utils.logger import Logger
-from src.utils.stock_duck_db_conn import StockDuckDbConn
+from src.utils.common.stock_duck_db_conn import StockDuckDbConn
 
 _logger = Logger()
 

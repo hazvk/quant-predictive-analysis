@@ -3,8 +3,8 @@ import yfinance as yf
 import duckdb
 
 from src.utils.logger import Logger
-from src.utils.constants import STOCKS_CURATED_TABLE_NAME, STOCKS_RAW_TABLE_NAME
-from src.utils.stock_duck_db_conn import StockDuckDbConn
+from src.utils.common.constants import STOCKS_RAW_TABLE_NAME
+from src.utils.common.stock_duck_db_conn import StockDuckDbConn
 
 
 class StockIngestor():
