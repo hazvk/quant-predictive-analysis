@@ -83,7 +83,7 @@ def initialize():
         
     load_dotenv("config/.env")
     _create_data_directory()
-    with StockDuckDbConn().get_current_conn() as conn:
+    with StockDuckDbConn().current_conn as conn:
         _create_tables(conn)
 
 if __name__ == "__main__":

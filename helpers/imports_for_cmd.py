@@ -9,7 +9,7 @@ from src.utils.common.stock_duck_db_conn import StockDuckDbConn
 
 load_dotenv("config/.env")
 
-duck_db_conn = StockDuckDbConn().get_current_conn()
+stock_duckdb_conn = StockDuckDbConn()
 
 # example usage
-# duck_db_conn.sql(f"SELECT * from {STOCKS_RAW_TABLE_NAME}")
+# stock_duckdb_conn.current_conn.sql(f"SELECT * from {STOCKS_RAW_TABLE_NAME}")

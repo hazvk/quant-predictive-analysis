@@ -49,7 +49,7 @@ class StockCurator():
     ### PRIVATE METHODS ###
 
     def _get_stock_db_data_conn(self) -> duckdb.DuckDBPyConnection:
-        return StockDuckDbConn().get_current_conn()
+        return StockDuckDbConn().current_conn
     
     def _get_latest_load_df(self) -> pd.DataFrame:
         self._logger.info("Processing data only for latest load of data")        

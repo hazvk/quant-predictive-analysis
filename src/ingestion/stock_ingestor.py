@@ -40,7 +40,7 @@ class StockIngestor():
         end_date = end_date_override or pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d")
         is_max_date_found = False
         
-        with StockDuckDbConn().get_current_conn() as conn:
+        with StockDuckDbConn().current_conn as conn:
             max_date_found_df = conn.sql(f"""
                 SELECT MAX(Date) as max_date FROM {STOCKS_RAW_TABLE_NAME}
                 WHERE ticker = ?
@@ -96,4 +96,4 @@ class StockIngestor():
         """)
 
     def _get_stock_db_data_conn(self) -> duckdb.DuckDBPyConnection:
-        return StockDuckDbConn().get_current_conn()
+        return StockDuckDbConn().current_conn
