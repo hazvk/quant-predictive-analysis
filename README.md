@@ -26,6 +26,7 @@ $ bash helpers/reset_db_and_seed.sh
 # TODOs
 
 * Understand metrics and functionality in [helpers/train_and_evaluate_model.ipynb](helpers/train_and_evaluate_model.ipynb)
+    * Verify calculations in curation too - the accuracies are too high
 * Research suitability for ML modelling for daily trends - look into swing trading
     * counts by portfolio achieved using:
     ```
